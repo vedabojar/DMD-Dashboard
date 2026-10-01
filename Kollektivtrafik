@@ -1,0 +1,49 @@
+import streamlit as st
+import pandas as pd
+import altair as alt
+
+# --- GLOBAL BOLD TEXT ---
+st.markdown("""
+<style>
+html, body, * {
+    font-weight: bold !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+df = pd.read_csv("data/BA.csv", sep=";")
+df["month"] = pd.to_datetime(
+    df["weeknr"].astype(str) + "-1-2026",
+    format="%W-%w-%Y"
+).dt.month_name()
+
+# --- CHART ---
+chart = (
+    alt.Chart(df)
+    .mark_bar()
+    .encode(
+        x=alt.X("month:O", title="Month"),
+        xOffset="municipality:N",
+        y=alt.Y(
+            "tickets:Q",
+            title="money spend",
+            axis=alt.Axis(
+                format=",.0f",
+                labelExpr="replace(datum.label, ',', ' ') + ' kr'"
+            )
+        ),
+        color=alt.Color("municipality:N", title="Municipality"),
+        tooltip=["weeknr", "municipality", "ticket_class", "tickets"]
+    )
+    .properties(title="Tickets KollektivTrafik")
+    .facet(
+        facet=alt.Facet("ticket_class:N", title="Ticket Class"),
+        columns=1
+    )
+    .configure_view(
+        stroke='lightgray',
+        fill='#f5f5f5'
+    )
+)
+
+st.altair_chart(chart, use_container_width=True)
